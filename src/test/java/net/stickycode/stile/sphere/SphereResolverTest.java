@@ -31,7 +31,7 @@ public class SphereResolverTest {
   SphereResolver resolver;
 
   @UnderTest
-  LowestMatchingVersionArtifactResolver dependencyResolver;
+  LowestMatchingVersionDependencyResolver dependencyResolver;
   
   @Controlled
   ArtifactRepository repository;
