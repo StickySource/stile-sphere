@@ -18,6 +18,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.stickycode.stile.artifact.Artifact;
 import net.stickycode.stile.artifact.Dependency;
 import net.stickycode.stile.version.Bound;
@@ -25,17 +28,20 @@ import net.stickycode.stile.version.Version;
 
 public class LowestMatchingVersionDependencyResolver
     implements DependencyResolver {
+  
+  private Logger log = LoggerFactory.getLogger(getClass());
 
   @Inject
   ArtifactRepository repository;
 
   @Override
-  public List<Artifact> resolve(List<Dependency> dependency) {
-    if (dependency.isEmpty())
+  public List<Artifact> resolve(List<Dependency> dependencies) {
+    log.debug("resolving {}", dependencies);
+    if (dependencies.isEmpty())
       return Collections.emptyList();
     
     List<Artifact> artifacts = new LinkedList<Artifact>();
-    for (Dependency d : dependency) {
+    for (Dependency d : dependencies) {
       Artifact resolved = resolve(d);
       artifacts.add(resolved);
       artifacts.addAll(resolve(resolved.getDependencies(Spheres.Main)));
@@ -44,6 +50,7 @@ public class LowestMatchingVersionDependencyResolver
   }
 
   private Artifact resolve(Dependency dependency) {
+    log.debug("resolving {}", dependency);
     Bound lowerBound = dependency.getVersion().getLowerBound();
     if (lowerBound.isExclusive())
       throw new RuntimeException("Dependency lower bound cannot be exclusive in order to provide stability");
@@ -60,7 +67,7 @@ public class LowestMatchingVersionDependencyResolver
       }
     }
 
-    throw new RuntimeException("Cant find " + dependency.getId() + "-" + lowerBound.getVersion());
+    throw new ArtifactVersionNotFoundException(dependency.getId(), lowerBound.getVersion(), repository);
   }
 
 }

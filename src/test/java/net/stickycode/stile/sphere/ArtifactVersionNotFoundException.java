@@ -12,18 +12,16 @@
  */
 package net.stickycode.stile.sphere;
 
-import java.util.List;
-
-import net.stickycode.stile.artifact.Artifact;
+import net.stickycode.exception.PermanentException;
 import net.stickycode.stile.version.Version;
 
+@SuppressWarnings("serial")
+public class ArtifactVersionNotFoundException
+    extends PermanentException {
 
-public interface ArtifactRepository {
-
-  Artifact lookup(ArtifactReference reference);
-
-  List<Version> lookupVersions(String id);
-
-  Artifact load(String id, Version version);
+  public ArtifactVersionNotFoundException(String id, Version version, ArtifactRepository artifactRepository) {
+    super("Failed to find version '{}' of {}. Versions {} found in repository {}",
+        version, id, artifactRepository.lookupVersions(id), artifactRepository);
+  }
 
 }

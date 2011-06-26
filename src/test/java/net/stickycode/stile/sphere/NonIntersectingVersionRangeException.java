@@ -12,18 +12,18 @@
  */
 package net.stickycode.stile.sphere;
 
-import java.util.List;
-
-import net.stickycode.stile.artifact.Artifact;
-import net.stickycode.stile.version.Version;
+import net.stickycode.exception.PermanentException;
 
 
-public interface ArtifactRepository {
+@SuppressWarnings("serial")
+public class NonIntersectingVersionRangeException
+    extends PermanentException {
 
-  Artifact lookup(ArtifactReference reference);
-
-  List<Version> lookupVersions(String id);
-
-  Artifact load(String id, Version version);
+  public NonIntersectingVersionRangeException() {
+    super("Version range '{}' and '{}' do not overlap and as such the dependency tree for {}-{} cannot be resolved");
+    
+  }
+  
+  
 
 }
