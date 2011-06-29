@@ -69,7 +69,7 @@ public class FakeArtifactRepository
     if ("e".equals(id))
       return versions("1", "2");
 
-    throw new ArtifactVersionsNotFoundException(id, this);
+    return versions("1");
   }
 
   @Override

@@ -15,11 +15,11 @@ package net.stickycode.stile.sphere;
 import java.util.List;
 
 import net.stickycode.stile.artifact.Artifact;
-import net.stickycode.stile.artifact.Dependency;
+import net.stickycode.stile.version.Version;
 
 
 public interface DependencyResolver {
 
-  List<Artifact> resolve(List<Dependency> dependency);
+  List<Artifact> resolve(String id, Version version);
 
 }

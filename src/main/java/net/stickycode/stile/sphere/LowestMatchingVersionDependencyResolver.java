@@ -28,30 +28,36 @@ import net.stickycode.stile.version.Version;
 
 public class LowestMatchingVersionDependencyResolver
     implements DependencyResolver {
-  
+
   private Logger log = LoggerFactory.getLogger(getClass());
 
   @Inject
   ArtifactRepository repository;
 
   @Override
-  public List<Artifact> resolve(List<Dependency> dependencies) {
-    log.debug("resolving {}", dependencies);
+  public List<Artifact> resolve(String id, Version version) {
+    Artifact artifact = repository.load(id, version);
+    return resolve(artifact);
+  }
+
+  public List<Artifact> resolve(Artifact artifact) {
+    List<Dependency> dependencies = artifact.getDependencies(Spheres.Main);
+    log.debug("resolving {} with {}", artifact, dependencies);
     if (dependencies.isEmpty())
-      return Collections.emptyList();
-    
+      return Collections.singletonList(artifact);
+
     List<Artifact> artifacts = new LinkedList<Artifact>();
     for (Dependency d : dependencies) {
       Artifact resolved = resolve(d);
       artifacts.add(resolved);
-      artifacts.addAll(resolve(resolved.getDependencies(Spheres.Main)));
+      artifacts.addAll(resolve(resolved));
     }
     return artifacts;
   }
 
   private Artifact resolve(Dependency dependency) {
     log.debug("resolving {}", dependency);
-    Bound lowerBound = dependency.getVersion().getLowerBound();
+    Bound lowerBound = dependency.getRange().getLowerBound();
     if (lowerBound.isExclusive())
       throw new RuntimeException("Dependency lower bound cannot be exclusive in order to provide stability");
 

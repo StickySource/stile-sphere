@@ -1,12 +1,23 @@
+/**
+ * Copyright (c) 2011 RedEngine Ltd, http://www.RedEngine.co.nz. All rights reserved.
+ *
+ * This program is licensed to you under the Apache License Version 2.0,
+ * and you may not use this file except in compliance with the Apache License Version 2.0.
+ * You may obtain a copy of the Apache License Version 2.0 at http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the Apache License Version 2.0 is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the Apache License Version 2.0 for the specific language governing permissions and limitations there under.
+ */
 package net.stickycode.stile.sphere;
 
-import static org.mockito.Mockito.when;
+import static org.fest.assertions.Assertions.assertThat;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import net.stickycode.mockwire.Controlled;
+import net.stickycode.mockwire.Uncontrolled;
 import net.stickycode.mockwire.UnderTest;
 import net.stickycode.mockwire.junit4.MockwireRunner;
 import net.stickycode.stile.artifact.Artifact;
@@ -17,8 +28,6 @@ import net.stickycode.stile.version.range.ComponentVersionRangeParser;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
 
 @RunWith(MockwireRunner.class)
 public class LowestMatchingVersionDependencyResolverTest {
@@ -32,93 +41,41 @@ public class LowestMatchingVersionDependencyResolverTest {
   @UnderTest
   ComponentVersionParser versionParser;
 
-  @Controlled
-  ArtifactRepository repository;
+  @Uncontrolled
+  FakeArtifactRepository repository;
 
-  @Test(expected = RuntimeException.class)
+  @Test(expected = ArtifactVersionNotFoundException.class)
   public void notFound() {
-    resolver.resolve(Collections.singletonList(new Dependency("a", parser.parseVersionRange("[1,2)"))));
+    resolver.resolve("noversions", v("1"));
   }
 
-  @Test(expected = RuntimeException.class)
+  @Test(expected = ArtifactVersionNotFoundException.class)
   public void notFoundWithOneAbove() {
-    registerVersions("a", versions("1.1"));
-    resolver.resolve(Collections.singletonList(new Dependency("a", parser.parseVersionRange("[1,2)"))));
+    resolver.resolve("aboverange", v("1"));
   }
 
-  @Test(expected = RuntimeException.class)
+  @Test(expected = ArtifactVersionNotFoundException.class)
   public void notFoundWithOneBelow() {
-    registerVersions("a", versions("0.9", "0.8"));
-    resolver.resolve(Collections.singletonList(new Dependency("a", parser.parseVersionRange("[1.1,2)"))));
+    resolver.resolve("belowrange", v("1"));
   }
 
   @Test
   public void found() {
-    Version version = v("1");
-    registerVersions("a", versions(version));
-    registerArtifact("a", version);
-    resolver.resolve(Collections.singletonList(new Dependency("a", parser.parseVersionRange("[1,2)"))));
+    assertThat(resolver.resolve("a", v("1"))).containsExactly(new Artifact("a", v("1")));
   }
 
   @Test
   public void foundPointVersion() {
-    Version version = v("1.1");
-    String id = "a";
-    registerVersions(id, versions(version));
-    registerArtifact(id, version);
-    resolver.resolve(Collections.singletonList(new Dependency(id, parser.parseVersionRange("[1.1,2)"))));
+    assertThat(resolver.resolve("just11", v("1.1"))).containsExactly(new Artifact("just11", v("1.1")));
   }
 
-  @Test
+  @Test(expected=NonIntersectingVersionRangeException.class)
   public void conflict() {
-    Version version = v("1.1");
-    String id = "a";
-    registerVersions(id, versions(version));
-    registerArtifact(id, version);
-    resolver.resolve(Collections.singletonList(new Dependency(id, parser.parseVersionRange("[1.1,2)"))));
+    resolver.resolve("a", v("2"));
   }
 
-  private void registerArtifact(String id, Version version) {
-    Artifact a = a(id, version);
-    when(repository.load(Mockito.eq(id), Mockito.eq(version))).thenReturn(a);
-  }
-
-  private Artifact a(String id, Version version) {
-    Artifact artifact = new Artifact(id, version);
-    when(repository.load(Matchers.eq(id), Matchers.<Version> any())).thenReturn(artifact);
-    return artifact;
-  }
-
-  private Artifact a(String id, String... dependencies) {
-    Artifact artifact = a(id, v("1.1"));
-    for (String dependency : dependencies) {
-      artifact.addDependency(Spheres.Main, dependency(dependency));
-    }
-    return artifact;
-  }
-
-  private Dependency dependency(String id) {
-    return new Dependency(id, parser.parseVersionRange("[1,2)"));
-  }
-
-  private void registerVersions(String id, List<Version> versions) {
-    when(repository.lookupVersions(id)).thenReturn(versions);
-  }
-
-  private List<Version> versions(String... strings) {
-    List<Version> versions = new ArrayList<Version>(strings.length);
-    for (String version : strings) {
-      versions.add(v(version));
-    }
-    return versions;
-  }
-
-  private List<Version> versions(Version... strings) {
-    List<Version> versions = new ArrayList<Version>(strings.length);
-    for (Version version : strings) {
-      versions.add(version);
-    }
-    return versions;
+  private List<Dependency> dep(String id, String specification) {
+    return Collections.singletonList(new Dependency(id, parser.parseVersionRange(specification)));
   }
 
   private Version v(String version) {
