@@ -46,16 +46,22 @@ public class LowestMatchingVersionDependencyResolver
     if (dependencies.isEmpty())
       return Collections.singletonList(artifact);
 
-    List<Artifact> artifacts = new LinkedList<Artifact>();
-    for (Dependency d : dependencies) {
-      Artifact resolved = resolve(d);
-      artifacts.add(resolved);
-      artifacts.addAll(resolve(resolved));
-    }
-    return artifacts;
+    Resolutions root = new Resolutions(artifact);
+    while (root.hasUnresolvedDependencies())
+      for (Resolution resolution : root.getOutstandingResolutions()) {
+        resolve(resolution);
+      }
+//    for (Dependency d : dependencies) {
+//      root.add(d);
+//      Artifact resolved = resolve(d);
+//      resolutions.add(resolved);
+//      artifacts.addAll(resolve(resolved));
+//    }
+    return root.getArtifactList();
   }
 
-  private Artifact resolve(Dependency dependency) {
+  private void resolve(Resolution resolution) {
+    Dependency dependency = resolution.getDependency();
     log.debug("resolving {}", dependency);
     Bound lowerBound = dependency.getRange().getLowerBound();
     if (lowerBound.isExclusive())
@@ -63,7 +69,7 @@ public class LowestMatchingVersionDependencyResolver
 
     Version version = findVersion(dependency, lowerBound);
 
-    return repository.load(dependency.getId(), version);
+    resolution.setArtifact(repository.load(dependency.getId(), version));
   }
 
   private Version findVersion(Dependency dependency, Bound lowerBound) {
